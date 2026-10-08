@@ -1,0 +1,48 @@
+name: grand_polimer_plast
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  sqlite3: ^3.5.2
+  excel: ^4.0.6
+  file_picker: ^13.1.0
+  sqflite: ^2.4.4
+  sqflite_common_ffi: ^2.4.3
+  path_provider: ^2.1.6
+  intl: ^0.20.3
+  path: ^1.9.1
+  google_fonts: ^8.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  image_path: "assets/logo.png"
+  windows:
+    generate: true
+    image_path: "assets/logo.png"
+    icon_size: 256 # Xira bo'lmasligi uchun aniq HD qilib ko'rsatamiz
+  web:
+    generate: true
+    image_path: "assets/logo.png"
+    background_color: "#00B074"
+    theme_color: "#00B074"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logo.png
