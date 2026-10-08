@@ -108,10 +108,16 @@ class _DebtsScreenState extends State<DebtsScreen> {
   }
 
   Future<void> _openSverkaDialog(PartnerBalanceModel partner) async {
-    await showDialog(
+    final result = await showDialog<bool>(
       context: context,
       builder: (context) => PartnerSverkaDialog(partner: partner),
     );
+    
+    // Agar Sverka oynasidan biror yozuv (to'lov yoki harakat) o'chirilgan bo'lsa (true qaytsa), 
+    // asosiy Qarzlar Balansi ro'yxatini ham yangilaymiz!
+    if (result == true) {
+      _loadPartners();
+    }
   }
 
   String _formatDate(String? dateStr) {
@@ -128,7 +134,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 5 ta Tab (Toza, emojilarsiz)
+            // 5 ta Tab
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -291,11 +297,12 @@ class _DebtsScreenState extends State<DebtsScreen> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: 250, // Fixed width to avoid overflow
+
+                Expanded(
+                  flex: 4,
                   child: Text(
                     'Amallar',
-                    textAlign: TextAlign.center,
+                    textAlign: TextAlign.left,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.grey,
@@ -366,6 +373,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Expanded(
@@ -410,9 +418,8 @@ class _DebtsScreenState extends State<DebtsScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(
-                        width: 250,
-                        // Fixed width for actions to prevent overflow
+                      Expanded(
+                        flex: 4,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

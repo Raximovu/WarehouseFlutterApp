@@ -162,7 +162,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
                       const SizedBox(width: 8),
 
-                      // CHIQIM TUGMASI (Ishlab chiqarishga, Sotuv, Brak Chiqimi)
+                      // CHIQIM TUGMASI (Faqat Ishlab chiqarishga va Sotuv)
                       PopupMenuButton<String>(
                         tooltip: 'Chiqim Operatsiyalari',
                         shape: RoundedRectangleBorder(borderRadius: AppTheme.borderRadius),
@@ -181,14 +181,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             child: ListTile(
                               leading: Icon(Icons.shopping_cart_checkout, color: Colors.blue),
                               title: Text('Sotuv (Mijozga)'),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'brak',
-                            child: ListTile(
-                              leading: Icon(Icons.warning_amber_outlined, color: Colors.red),
-                              title: Text('Brak Chiqimi / Sotuvi'),
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),

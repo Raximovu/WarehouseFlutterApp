@@ -226,14 +226,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _restoreDB() async {
+    // Tiklash hozirgi barcha ma'lumotlarni almashtiradi — avval tasdiq so'raymiz
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Zaxiradan tiklashni tasdiqlang'),
+        content: const Text(
+          'Tiklash hozirgi BARCHA ma\'lumotlarni (ombor, kontragentlar, to\'lovlar) tanlangan zaxira fayldagi ma\'lumotlar bilan almashtiradi.\n\n'
+          'Xavfsizlik uchun hozirgi bazaning nusxasi avtomatik saqlab qo\'yiladi.\n\n'
+          'Davom etasizmi?',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Yo\'q')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Ha, fayl tanlash'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
     try {
       final success = await _backupService.restoreFromUserLocation();
       if (success && mounted) {
         _loadAllSettingsData();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tiklandi!'), backgroundColor: AppTheme.primaryColor));
+        final safetyPath = _backupService.lastSafetyCopyPath;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(safetyPath == null ? 'Tiklandi!' : 'Tiklandi! Oldingi bazaning nusxasi saqlandi:\n$safetyPath'),
+            backgroundColor: AppTheme.primaryColor,
+            duration: const Duration(seconds: 8),
+          ),
+        );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Xato: $e'), backgroundColor: AppTheme.errorColor));
+      if (mounted) {
+        final message = e.toString().replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Xato: $message'), backgroundColor: AppTheme.errorColor));
+      }
     }
   }
 

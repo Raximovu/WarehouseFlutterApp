@@ -56,11 +56,17 @@ class _PartnerSverkaDialogState extends State<PartnerSverkaDialog> {
   }
 
   Future<void> _deleteSverkaItem(SverkaItemModel item) async {
+    final isPayment = item.type.contains('tolov');
+    final isPerekidka = isPayment && item.title.contains('(perekidka)');
+    final perekidkaNote = isPerekidka
+        ? '\n\nDiqqat: bu perekidka. Ikkinchi kontragentdagi qarama-qarshi yozuv ham birga o\'chiriladi.'
+        : '';
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('O\'chirishni tasdiqlang'),
-        content: Text('Siz rostdan ham "${item.title}" yozuvini Sverka aktidan o\'chirmoqchimisiz?'),
+        content: Text('Siz rostdan ham "${item.title}" yozuvini Sverka aktidan o\'chirmoqchimisiz?$perekidkaNote'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -77,15 +83,16 @@ class _PartnerSverkaDialogState extends State<PartnerSverkaDialog> {
 
     if (confirm == true) {
       try {
-        final isPayment = item.type.contains('tolov');
+        var deletedCount = 1;
         if (isPayment) {
-          await _paymentService.deletePayment(item.id);
+          deletedCount = await _paymentService.deletePayment(item.id);
         } else {
           await _transactionService.deleteTransaction(item.id);
         }
         _loadSverkaHistory();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yozuv o\'chirildi'), backgroundColor: AppTheme.primaryColor));
+          final message = deletedCount > 1 ? 'Perekidka ikkala kontragentdan o\'chirildi' : 'Yozuv o\'chirildi';
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: AppTheme.primaryColor));
         }
       } catch (e) {
         if (mounted) {

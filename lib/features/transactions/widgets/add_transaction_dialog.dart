@@ -52,6 +52,9 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
       widget.transactionType == 'sotuv' || 
       widget.transactionType == 'brak';
 
+  // Kirim (ta'minotchidan) va sotuv (mijozga) kontragentsiz saqlanmasligi kerak — aks holda qarz hisobiga tushmaydi
+  bool get _needsPartner => widget.transactionType == 'kirim' || widget.transactionType == 'sotuv';
+
   @override
   void initState() {
     super.initState();
@@ -167,6 +170,17 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
       return;
     }
 
+    if (_needsPartner && _selectedPartner == null) {
+      final isKirim = widget.transactionType == 'kirim';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(isKirim
+            ? 'Iltimos, ta\'minotchini tanlang! Ro\'yxat bo\'sh bo\'lsa, avval "Kontragentlar" bo\'limida ta\'minotchi qo\'shing.'
+            : 'Iltimos, mijozni tanlang! Ro\'yxat bo\'sh bo\'lsa, avval "Kontragentlar" bo\'limida mijoz qo\'shing.'),
+        backgroundColor: AppTheme.warningColor,
+      ));
+      return;
+    }
+
     final amount = double.tryParse(_amountController.text.trim());
     final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
 
@@ -184,6 +198,25 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
         ));
         return;
       }
+    }
+
+    // Narx kiritilmasa kirim/sotuv hisobda 0 so'm bo'lib qoladi va qarzga qo'shilmaydi — bilmasdan qoldirilmasligi uchun so'raymiz
+    if (_needsPartner && price <= 0) {
+      final consequence = widget.transactionType == 'kirim'
+          ? 'Bu kirim ta\'minotchi oldidagi qarzga qo\'shilmaydi.'
+          : 'Bu sotuv mijozning qarziga qo\'shilmaydi.';
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Narx kiritilmagan'),
+          content: Text('Bir birlik narxi 0 so\'m. $consequence\n\nShunday saqlansinmi?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Yo\'q, narxni kiritaman')),
+            ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Ha, 0 so\'m bilan saqlash')),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
     }
 
     setState(() => _isSaving = true);
@@ -263,7 +296,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      if (widget.transactionType == 'kirim' || widget.transactionType == 'sotuv') ...[
+                      if (_needsPartner) ...[
                         Text(widget.transactionType == 'kirim' ? 'Ta\'minotchi (Kimdan olindi):' : 'Mijoz (Kimga sotildi):', style: const TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<PartnerModel>(
@@ -278,6 +311,15 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                             if (val != null) setState(() => _selectedPartner = val);
                           },
                         ),
+                        if (_partners.isEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            widget.transactionType == 'kirim'
+                                ? 'Ta\'minotchi topilmadi. Avval "Kontragentlar" bo\'limida ta\'minotchi qo\'shing.'
+                                : 'Mijoz topilmadi. Avval "Kontragentlar" bo\'limida mijoz qo\'shing.',
+                            style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                       ],
 
@@ -392,7 +434,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
       actions: [
         TextButton(onPressed: _isSaving ? null : () => Navigator.of(context).pop(false), child: const Text('Bekor qilish', style: TextStyle(color: Colors.grey))),
         ElevatedButton(
-          onPressed: (_isSaving || (_isChiqim && _materials.isEmpty)) ? null : _saveTransaction,
+          onPressed: (_isSaving || (_isChiqim && _materials.isEmpty) || (_needsPartner && _partners.isEmpty)) ? null : _saveTransaction,
           child: _isSaving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(isEdit ? 'O\'zgarishlarni Saqlash' : 'Saqlash'),
         ),
       ],

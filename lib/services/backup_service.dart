@@ -4,6 +4,9 @@ import '../database/db_helper.dart';
 class BackupService {
   final dbHelper = DatabaseHelper.instance;
 
+  /// Oxirgi tiklashdan oldin saqlangan eski bazaning nusxasi yo'li (tiklash tugagach ko'rsatiladi).
+  String? lastSafetyCopyPath;
+
   Future<bool> backupToUserLocation() async {
     final String? dirPath = await FilePicker.getDirectoryPath(
       dialogTitle: 'Zaxira Saqlanadigan Papkani Tanlang',
@@ -26,7 +29,7 @@ class BackupService {
     );
 
     if (files.isNotEmpty && files.first.path != null) {
-      await dbHelper.restoreDatabase(files.first.path!);
+      lastSafetyCopyPath = await dbHelper.restoreDatabase(files.first.path!);
       return true;
     }
     return false;

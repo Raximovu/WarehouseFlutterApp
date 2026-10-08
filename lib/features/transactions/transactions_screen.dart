@@ -46,8 +46,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     setState(() => _isLoading = true);
     try {
       if (_selectedTab == 'all') {
-        final recent = await _transactionService.getRecentTransactions(limit: 500);
-        setState(() => _transactions = recent);
+        // Barcha yozuvlar olinadi (avval faqat oxirgi 500 tasi edi — eski sanalar ro'yxatda ko'rinmay qolardi)
+        final all = await _transactionService.getAllTransactions();
+        setState(() => _transactions = all);
       } else {
         final filtered = await _transactionService.getTransactionsByType(_selectedTab);
         setState(() => _transactions = filtered);
@@ -142,8 +143,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   List<TransactionModel> get _filteredTransactions {
     final query = _searchController.text.trim().toLowerCase();
     
-    final start = DateTime(_fromDate.year, _fromDate.month, _fromDate.day, 0, 0, 0);
-    final end = DateTime(_toDate.year, _toDate.month, _toDate.day, 23, 59, 59);
+    // Sanalar "yyyy-MM-dd" (yoki "yyyy-MM-dd HH:mm:ss") ko'rinishida saqlanadi, shuning uchun
+    // sana qismini matn sifatida solishtirish yetarli: tez va aniq (minglab yozuvda ham sekinlashmaydi).
+    final dateFormat = DateFormat('yyyy-MM-dd');
+    final startStr = dateFormat.format(_fromDate);
+    final endStr = dateFormat.format(_toDate);
+    final isoDate = RegExp(r'^\d{4}-\d{2}-\d{2}$');
 
     return _transactions.where((t) {
       bool matchesSearch = true;
@@ -151,13 +156,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         matchesSearch = t.name.toLowerCase().contains(query);
       }
 
+      // Sanasi tanib bo'lmaydigan yozuvlar (eski formatlar) avvalgidek ro'yxatda qoladi
       bool matchesDate = true;
-      try {
-        final dateOnlyStr = t.date.split(' ')[0];
-        final txDate = DateFormat('yyyy-MM-dd').parse(dateOnlyStr);
-        matchesDate = txDate.isAfter(start.subtract(const Duration(seconds: 1))) &&
-                      txDate.isBefore(end.add(const Duration(seconds: 1)));
-      } catch (_) {}
+      final datePart = t.date.split(' ')[0];
+      if (isoDate.hasMatch(datePart)) {
+        matchesDate = datePart.compareTo(startStr) >= 0 && datePart.compareTo(endStr) <= 0;
+      }
 
       return matchesSearch && matchesDate;
     }).toList();

@@ -39,7 +39,7 @@ class InventoryService {
       JOIN categories c ON t.category_id = c.id
       JOIN units u ON t.unit_id = u.id
       GROUP BY t.name, c.name, u.name
-      HAVING current_amount > 0
+      HAVING ABS(current_amount) > 0.000001
       ORDER BY c.name, t.name
     ''');
 

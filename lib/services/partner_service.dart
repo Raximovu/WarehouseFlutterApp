@@ -134,7 +134,27 @@ class PartnerService {
     return items;
   }
 
+  // Yordamchi metod: Bazada xuddi shu STIR va Turdagi kontragent borligini tekshirish
+  Future<bool> _isPartnerExists(String inn, String type, int? currentId) async {
+    final db = await dbHelper.database;
+    final result = await db.query(
+      'partners',
+      where: 'inn = ? AND type = ? AND id != ?',
+      whereArgs: [inn, type, currentId ?? -1],
+    );
+    return result.isNotEmpty;
+  }
+
   Future<int> addPartner(PartnerModel partner) async {
+    // 1. Unikallikni tekshirish (STIR va Turi bo'yicha)
+    if (partner.inn != null && partner.inn!.isNotEmpty) {
+      final exists = await _isPartnerExists(partner.inn!, partner.type, null);
+      if (exists) {
+        final typeLabel = partner.type == 'mijoz' ? 'Mijoz' : 'Ta\'minotchi';
+        throw Exception('Ushbu STIR raqami bilan $typeLabel allaqachon bazaga kiritilgan!');
+      }
+    }
+
     final db = await dbHelper.database;
     final map = partner.toMap();
     map.remove('id');
@@ -142,6 +162,15 @@ class PartnerService {
   }
 
   Future<int> updatePartner(PartnerModel partner) async {
+    // 1. Unikallikni tekshirish (STIR va Turi bo'yicha)
+    if (partner.inn != null && partner.inn!.isNotEmpty) {
+      final exists = await _isPartnerExists(partner.inn!, partner.type, partner.id);
+      if (exists) {
+        final typeLabel = partner.type == 'mijoz' ? 'Mijoz' : 'Ta\'minotchi';
+        throw Exception('Ushbu STIR raqami bilan boshqa $typeLabel allaqachon bazaga kiritilgan!');
+      }
+    }
+
     final db = await dbHelper.database;
     final map = partner.toMap();
     map.remove('id');

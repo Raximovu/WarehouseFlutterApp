@@ -55,6 +55,13 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
     return isClient ? _selectedPartner!.clientBalance : _selectedPartner!.supplierBalance;
   }
 
+  /// Kontragent bizdan qarzdormi (>0) yoki biz unga qarzdormizmi (<0) — hamma turdagi kontragent uchun BIR XIL ishora bilan.
+  /// Mijoz: clientBalance (mijoz bizdan qarz = musbat).
+  /// Ta'minotchi: supplierBalance biz uning qarzdorimiz degani, shuning uchun ishorasi teskari olinadi.
+  double _positionOf(PartnerBalanceModel p) {
+    return p.type == 'mijoz' ? p.clientBalance : -p.supplierBalance;
+  }
+
   double get _maxAllowedAmount {
     if (_selectedPartner == null) return double.infinity;
     final isClient = _selectedPartner!.type == 'mijoz';
@@ -119,7 +126,8 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
       final dateStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(fullDate);
 
       if (_operationType == 'perekidka') {
-        final isSenderOwes = _currentBalance > 0;
+        // Yuboruvchi bizdan qarzdormi? (mijoz ham, ta'minotchi ham bir xil qoida bilan)
+        final isSenderOwes = _positionOf(_selectedPartner!) > 0;
         
         final senderTx = PaymentModel(
           date: dateStr,
@@ -139,8 +147,8 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
           notes: 'Perekidka: ${_selectedPartner!.name} dan qabul qilindi',
         );
 
-        await _paymentService.addPayment(senderTx);
-        await _paymentService.addPayment(receiverTx);
+        // Ikkala yozuv bitta tranzaksiyada saqlanadi: yoki ikkalasi ham saqlanadi, yoki hech biri
+        await _paymentService.addTransferPair(senderTx, receiverTx);
 
       } else {
         // Oddiy Kirim yoki Chiqim
